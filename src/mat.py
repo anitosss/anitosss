@@ -1,16 +1,15 @@
-class MatrixBase:
-    def input(self):
-        raise NotImplementedError("Метод input() должен быть реализован")
-
-    def display(self):
-        raise NotImplementedError("Метод display() должен быть реализован")
-
-
-class Matrix(MatrixBase):
+]class MatrixBase:
     def __init__(self, rows, cols, default_value=0):
         self.rows = rows
         self.cols = cols
         self.data = [[default_value for _ in range(cols)] for _ in range(rows)]
+
+    def input(self):
+        raise NotImplementedError("Метод input() должен быть реализован")
+
+    def display(self):
+        for row in self.data:
+            print(" ".join(f"{elem:8}" for elem in row))
 
     def at(self, row, col):
         if row >= self.rows or col >= self.cols:
@@ -23,11 +22,18 @@ class Matrix(MatrixBase):
         self.data[row][col] = value
 
     def transpose(self):
-        result = Matrix(self.cols, self.rows)
+        result = self.__class__(self.cols, self.rows)
         for i in range(self.rows):
             for j in range(self.cols):
-                result.set(j, i, self.data[i][j])
+                result.set(j, i, self.at(i, j))
         return result
+
+
+class Matrix(MatrixBase):
+    def input(self):
+        print(f"Введите элементы матрицы построчно ({self.rows}x{self.cols}):")
+        for i in range(self.rows):
+            self.data[i] = list(map(int, input().split()))
 
     def __add__(self, other):
         if self.rows != other.rows or self.cols != other.cols:
@@ -35,7 +41,7 @@ class Matrix(MatrixBase):
         result = Matrix(self.rows, self.cols)
         for i in range(self.rows):
             for j in range(self.cols):
-                result.set(i, j, self.data[i][j] + other.data[i][j])
+                result.set(i, j, self.at(i, j) + other.at(i, j))
         return result
 
     def __mul__(self, other):
@@ -44,30 +50,22 @@ class Matrix(MatrixBase):
         result = Matrix(self.rows, other.cols)
         for i in range(self.rows):
             for j in range(other.cols):
-                result.set(i, j, sum(self.data[i][k] * other.data[k][j] for k in range(self.cols)))
+                result.set(i, j, sum(self.at(i, k) * other.at(k, j) for k in range(self.cols)))
         return result
-
-    def input(self):
-        print(f"Введите элементы матрицы построчно ({self.rows}x{self.cols}):")
-        for i in range(self.rows):
-            self.data[i] = list(map(int, input().split()))
-
-    def display(self):
-        for row in self.data:
-            print(" ".join(f"{elem:8}" for elem in row))
 
 
 class DiagonalMatrix(MatrixBase):
     def __init__(self, size, default_value=0):
-        self.size = size
+        super().__init__(size, size, default_value)
         self.diagonal = [default_value for _ in range(size)]
 
-    def set_diagonal(self, index, value):
+    def set(self, index, value):
         if index >= self.size:
             raise IndexError("Индекс вне диапазона")
         self.diagonal[index] = value
+        super().set(index, index, value)
 
-    def get_diagonal(self, index):
+    def at(self, index):
         if index >= self.size:
             raise IndexError("Индекс вне диапазона")
         return self.diagonal[index]
@@ -75,15 +73,12 @@ class DiagonalMatrix(MatrixBase):
     def input(self):
         print(f"Введите {self.size} элементов для диагонали:")
         self.diagonal = list(map(int, input().split()))
-
-    def display(self):
         for i in range(self.size):
-            for j in range(self.size):
-                if i == j:
-                    print(f"{self.diagonal[i]:8}", end=" ")
-                else:
-                    print(f"{0:8}", end=" ")
-            print()
+            super().set(i, i, self.diagonal[i])
+
+    def transpose(self):
+        # Диагональная матрица неизменна при транспонировании
+        return self
 
 
 class BandMatrix(Matrix):
@@ -113,14 +108,14 @@ class MatrixAdapter:
         return mat
 
     @staticmethod
-    def from_file(filename, rows, cols):
+    def from_file(filename):
         with open(filename, 'r') as f:
-            elements = list(map(int, f.read().split()))
-        if len(elements) != rows * cols:
-            raise ValueError("Некорректный формат файла для матрицы")
+            lines = f.readlines()
+        rows = len(lines)
+        cols = len(lines[0].split())
         mat = Matrix(rows, cols)
-        for i in range(rows):
-            mat.data[i] = elements[i * cols:(i + 1) * cols]
+        for i, line in enumerate(lines):
+            mat.data[i] = list(map(int, line.split()))
         return mat
 
 
