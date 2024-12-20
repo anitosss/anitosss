@@ -28,30 +28,34 @@ class MatrixBase:
                 result.set(j, i, self.at(i, j))
         return result
 
-
-class Matrix(MatrixBase):
-    def input(self):
-        print(f"Введите элементы матрицы построчно ({self.rows}x{self.cols}):")
-        for i in range(self.rows):
-            self.data[i] = list(map(int, input().split()))
-
     def __add__(self, other):
+        if not isinstance(other, self.__class__):
+            raise ValueError("Матрицы должны быть одного типа для сложения")
         if self.rows != other.rows or self.cols != other.cols:
             raise ValueError("Размеры матриц должны совпадать для сложения")
-        result = Matrix(self.rows, self.cols)
+        result = self.__class__(self.rows, self.cols)
         for i in range(self.rows):
             for j in range(self.cols):
                 result.set(i, j, self.at(i, j) + other.at(i, j))
         return result
 
     def __mul__(self, other):
+        if not isinstance(other, self.__class__):
+            raise ValueError("Матрицы должны быть одного типа для умножения")
         if self.cols != other.rows:
             raise ValueError("Размеры матриц должны совпадать для умножения")
-        result = Matrix(self.rows, other.cols)
+        result = self.__class__(self.rows, other.cols)
         for i in range(self.rows):
             for j in range(other.cols):
                 result.set(i, j, sum(self.at(i, k) * other.at(k, j) for k in range(self.cols)))
         return result
+
+
+class Matrix(MatrixBase):
+    def input(self):
+        print(f"Введите элементы матрицы построчно ({self.rows}x{self.cols}):")
+        for i in range(self.rows):
+            self.data[i] = list(map(int, input().split()))
 
 
 class DiagonalMatrix(MatrixBase):
@@ -94,31 +98,6 @@ class BandMatrix(Matrix):
                     self.set(i, j, int(input(f"Элемент ({i},{j}): ")))
                 else:
                     self.set(i, j, 0)
-
-    def __add__(self, other):
-        if self.rows != other.rows or self.cols != other.cols:
-            raise ValueError("Размеры матриц должны совпадать для сложения")
-        result = BandMatrix(self.rows, self.cols, self.bandwidth)
-        for i in range(self.rows):
-            for j in range(self.cols):
-                if abs(i - j) <= self.bandwidth:
-                    result.set(i, j, self.at(i, j) + other.at(i, j))
-                else:
-                    result.set(i, j, 0)
-        return result
-
-    def __mul__(self, other):
-        if self.cols != other.rows:
-            raise ValueError("Размеры матриц должны совпадать для умножения")
-        result = BandMatrix(self.rows, other.cols, self.bandwidth)
-        for i in range(self.rows):
-            for j in range(other.cols):
-                value = 0
-                for k in range(self.cols):
-                    if abs(i - k) <= self.bandwidth and abs(k - j) <= other.bandwidth:
-                        value += self.at(i, k) * other.at(k, j)
-                result.set(i, j, value)
-        return result
 
 
 class MatrixAdapter:
